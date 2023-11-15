@@ -4,10 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     btnComenzar.addEventListener('click', iniciarJuego);
     stopButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            // Lógica para manejar el clic en el botón STOP
-            console.log(`Jugador ${e.target.dataset.player} ha presionado STOP`);
-        });
+        button.addEventListener('click', handleStopButtonClick);
     });
 });
 
@@ -60,32 +57,44 @@ function handleStopButtonClick() {
         input.disabled = true;
     });
 
-    //calcular puntajes, etc.
+    // Recoger las respuestas de todos los jugadores
+    const todasLasRespuestas = recogerRespuestas();
+
+    // Calcular y mostrar los puntajes para cada jugador
     for (let i = 1; i <= 7; i++) { // Asumiendo 7 jugadores
-        let puntajeJugador = calcularPuntaje(i);
+        let puntajeJugador = calcularPuntaje(i, todasLasRespuestas);
         console.log(`Puntaje del Jugador ${i}: ${puntajeJugador}`);
         // Aquí puedes actualizar el puntaje en la interfaz del juego
     }
-    
 }
 
-function calcularPuntaje(jugador) {
+function calcularPuntaje(jugador, todasLasRespuestas) {
     let puntaje = 0;
-    // Suponiendo que cada respuesta correcta vale 10 puntos, por ejemplo
 
-    // Seleccionar todos los inputs del jugador
-    const inputsJugador = document.querySelectorAll(`.input-jugador-${jugador}`);
+    document.querySelectorAll(`.input-jugador-${jugador}`).forEach(input => {
+        let categoria = input.dataset.categoria;
+        let respuesta = input.value.trim().toLowerCase();
+        
+        if (respuesta !== "") {
+            let respuestasCategoria = todasLasRespuestas[categoria];
+            let conteoRespuestas = respuestasCategoria.filter(r => r === respuesta).length;
 
-    inputsJugador.forEach(input => {
-        if (input.value !== "" && esRespuestaValida(input.value)) {
-            puntaje += 100;
+            if (conteoRespuestas === 1) { // Respuesta única
+                puntaje += 100;
+            } else if (conteoRespuestas > 1) { // Respuesta repetida
+                puntaje += 50;
+            }
+
+            // Si es la única respuesta en una categoría
+            if (conteoRespuestas === 1 && respuestasCategoria.length === 1) {
+                puntaje += 200;
+            }
         }
-    });
-
-    // Aquí puedes agregar otras reglas de puntuación si las hay
+    })
 
     return puntaje;
 }
+
 
 function esRespuestaValida(respuesta, letraJuego) {
     // Eliminar espacios al inicio y al final de la respuesta
@@ -99,5 +108,29 @@ function esRespuestaValida(respuesta, letraJuego) {
     // Comparar la primera letra de la respuesta con la letra del juego
     // Convertir ambas a minúsculas (o mayúsculas) para la comparación
     return respuesta.toLowerCase().startsWith(letraJuego.toLowerCase());
+}
+
+
+function recogerRespuestas() {
+    let respuestas = {
+        "nombreApellido": [],
+        "paisCiudad": [],
+        "animalAve": [],
+        "frutaVerdura": [],
+        "marcaTv": [],
+        "colorCosa": []
+        // Añade todas las categorías necesarias
+    };
+
+    for (let i = 1; i <= 7; i++) { // Asumiendo 7 jugadores
+        document.querySelectorAll(`.input-jugador-${i}`).forEach(input => {
+            let categoria = input.dataset.categoria;
+            if (input.value.trim() !== "") {
+                respuestas[categoria].push(input.value.trim().toLowerCase());
+            }
+        });
+    }
+
+    return respuestas;
 }
 
